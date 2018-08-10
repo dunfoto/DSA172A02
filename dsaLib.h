@@ -17,6 +17,7 @@
 
 using namespace std;
 
+typedef enum {LH, EH, RH} _state;
 
 class DSAException {
     int     _error;
@@ -221,12 +222,13 @@ template <class T>
 struct AVLNode {
     T           _data;
     AVLNode<T>   *_pLeft, *_pRight;
+    _state state;
 #ifdef AVL_USE_HEIGHT
     int         _height;
-    AVLNode(T &a) : _data(a), _pLeft(NULL), _pRight(NULL), _height(1) {}
+    AVLNode(T &a) : _data(a), _pLeft(NULL), _pRight(NULL), _height(1), state(EH) {}
 #else
     int         _bFactor;
-    AVLNode(T &a) : _data(a), _pLeft(NULL), _pRight(NULL), _bFactor(0) {}
+    AVLNode(T &a) : _data(a), _pLeft(NULL), _pRight(NULL), _bFactor(0), state(EH) {}
 #endif
 };
 
@@ -245,22 +247,346 @@ public:
     void traverseLRN(void (*op)(T&)) { traverseLRN(_pRoot, op); }
 
 protected:
-    void destroy(AVLNode<T>* &pR);
-    bool find(AVLNode<T> *pR, T& key, T* &ret);
-    bool insert(AVLNode<T>* &pR, T& a);
-    bool remove(AVLNode<T>* &pR, T& a);
-    void traverseNLR(AVLNode<T> *pR, void (*op)(T&));
-    void traverseLNR(AVLNode<T> *pR, void (*op)(T&));
-    void traverseLRN(AVLNode<T> *pR, void (*op)(T&));
+    void destroy(AVLNode<T>* &pR); //done
+    bool find(AVLNode<T> *pR, T& key, T* &ret); //done
+    bool insert(AVLNode<T>* &pR, T& a); //done
+    void _insert(AVLNode<T>* &pR,T& a,bool &isTaller,bool IsLeft); //done
+    bool remove(AVLNode<T>* &pR, T& a); //done
+    void _remove(AVLNode<T>* &pR, T& a, bool *shorter, bool *success); //done
+    void traverseNLR(AVLNode<T> *pR, void (*op)(T&)); //done
+    void traverseLNR(AVLNode<T> *pR, void (*op)(T&)); //done
+    void traverseLRN(AVLNode<T> *pR, void (*op)(T&)); //done
 
-    void rotLeft(AVLNode<T>* &pR);
-    void rotRight(AVLNode<T>* &pR);
-    void rotLR(AVLNode<T>* &pR);
-    void rotRL(AVLNode<T>* &pR);
+    void rotLeft(AVLNode<T>* &pR); //done
+    void rotRight(AVLNode<T>* &pR); //done
+    void rotLR(AVLNode<T>* &pR); //?
+    void rotRL(AVLNode<T>* &pR); //?
 
-    bool balanceLeft(AVLNode<T>* &pR);
-    bool balanceRight(AVLNode<T>* &pR);
+    bool balanceLeft(AVLNode<T>* &pR); //done
+    bool balanceRight(AVLNode<T>* &pR); //done
+    void dltRightbal(AVLNode<T>* &pR); //done
+    void dltLeftBal(AVLNode<T>* &pR);//done
 };
 
+/*definition for functions of AVL Tree */
+//1. detroy an AVL tree
+template <class T>
+void AVLTree<T>::destroy(AVLNode<T>* &pR){
+    if (pR->_pLeft != NULL){
+        destroy(pR->_pLeft);
+    }
+    if (pR->_pRight != NULL){
+        destroy(pR->_pRight);
+    }
+    delete pR;
+    pR = NULL;
+}
+//2. find a node containing value [key] and assign the node the pointer [ret]
+template <class T>
+bool find(AVLNode<T> *pR, T& key, T* &ret){
+    if (pR == NULL){ //[key] does not exist! return false and set pointer to NULl
+        ret = NULL;
+        return false;
+    }else{
+        if (pR->_data == key){ //return the value
+            ret = pR;
+            return true;
+        }
+        else if (pR->_data < key){ //search the [key] in the right side of the tree
+            return find(pR->_pRight,key,ret);
+        }
+        else{
+            return find(pR->_pLeft,key,ret);
+        }
+    }
+}
+//3. insert an AVL Node
+template<class T>
+bool insert(AVLNode<T>* &pR, T& a){
+    bool isTaller = false;
+    bool IsLeft = false;
+    int level = 0;
+    return _insert(pR,a,isTaller, IsLeft, level);
+}
+template<class T>
+void _insert(AVLNode<T>* &pR,T& a,bool &isTaller,bool IsLeft){
+    //pR == NULL -> insert
+    if (pR == NULL){
+        isTaller = true;
+        pR->_data = a;
+    }
+    else{ //root != NULL
+        if(a < pR->_data){
+            _insert(pR->_pLeft,a,isTaller,true);
+            if (isTaller){
+                if (pR->state ==RH){
+                    pR->state = EH;
+                    isTaller = false;
+                }
+                else if (pR->state == LH){
+                    balanceLeft(pR);
+                    isTaller = false;
+                }
+                else{
+                    pR->state = LH;
+                }
+            }
+        }
+        else if (a > pR->_data){
+            _insert(pR->_pRight,a,isTaller,true);
+            if (isTaller) {
+                if (pR->state == LH) {
+                    pR->state = EH;
+                    isTaller = false;
+                }
+                else if (pR->state == RH){
+                    balanceRight(pR);
+                    isTaller - false;
+                }
+                else {
+                    pR->state = RH;
+                }
+            }
+        }
+        else{
+            isTaller = false;
+        }
+    }
+}
+template<class T>
+void rotLeft(AVLNode<T>* &pR){
+    AVLNode<T>* tmp = pR;
+	pR = tmp->_pRight;
+	tmp->_pRight = pR->_pLeft;
+	pR->_pLeft = tmp;
+}
+template<class T>
+void rotRight(AVLNode<T>* &pR){
+    AVLNode<T> *tmp = pR;
+    pR = tmp->_pLeft;
+    tmp->_pLeft = pR->_pRight;
+    pR->_pRight = tmp;
+}
+template<class T>
+bool balanceLeft(AVLNode<T>* &pR){
+    if (pR->_pLeft->state == LH){
+        pR->_pLeft->state = EH;
+        pR->state = EH;
+        rotRight(pR);
+    }
+    else{
+        if (pR->_pLeft->_pRight->state == LH){
+            pR->state = RH;
+            pR->_pLeft->state = EH;
+        }
+        else if (pR->_pLeft->_pRight->state == EH){
+            pR->state = EH;
+            pR->_pLeft->state = EH;
+        }
+        else{
+            pR->state = EH;
+            pR->_pLeft->state = LH;
+        }
+        pR->_pLeft->_pRight->state = EH;
+        rotLeft(pR->_pLeft);
+        rotRight(pR);
+    }
+}
+template<class T>
+bool balanceRight(AVLNode<T>* &pR){
+    if (pR->_pRight->state == RH){
+        pR->_pRight->state = EH;
+        pR->state = EH;
+        rotLeft(pR);
+    }
+    else {
+        if (pR->_pRight->_pLeft->state == RH) {
+            pR->state = LH;
+            pR->_pRight->state = EH;
+        }
+        else if (pR->_pRight->_pLeft->state == EH){
+            pR->state = EH;
+            pR->_pRight->state = EH;
+        }
+        else {
+            pR->state = EH;
+            pR->_pRight->state = RH;
+        }
+        pR->_pRight->_pLeft->state = EH;
+        rotRight(pR->_pRight);
+        rotLeft(pR);
+    }
+}
 
+template<class T>
+bool remove(AVLNode<T>* &pR, T& a){
+    bool shorter;
+    bool success;
+    _remove(pR,a,shorter,success);
+    return success;
+}
+template<class T>
+void _remove(AVLNode<T>* &pR, T& a, bool *shorter, bool *success){
+    AVLNode<T>* dltPtr;
+    AVLNode<T>* exchPtr;
+    AVLNode<T>* newRoot;
+    if(!pR){
+        *shorter = false;
+        *success = false;
+        return;
+    }
+    if (a < pR->_data){
+        _remove(pR->_pLeft,a,shorter,success);
+        if (*shorter)
+            dltRightBal(pR, shorter);
+    }
+    else if (a > pR->_data){
+        _remove(pR->_pRight,a,shorter,success);
+        if (*shorter)
+            dltLeftbal(pR,shorter);
+    }
+    else{
+        dltPtr = pR;
+        if (!pR->_pRight){
+            pR = pR->_pLeft;
+            delete dltPtr;
+            *success = true;
+            *shorter = true;
+        }
+        else if (!pR->_pLeft){
+            pR = pR->_pLeft;
+            delete dltPtr;
+            *success = true;
+            *shorter = true;
+        }
+        else{
+            exchPtr = pR->_pLeft;
+            while (exchPtr->_pRight)
+                exchPtr = exchPtr->_pRight;
+            pR->_data = exchPtr->_data;
+            _remove(pR->left,exchPtr->_data,shorter,success);
+            if (*shorter)
+                dltRightBal(pR,shorter);
+        }
+    }
+}
+
+template<class T>
+void dltRightBal(AVLNode<T>* &pR, bool *shorter){
+    switch (pR->state) {
+        case LH:
+            pR->state = EH;
+            break;
+        case EH:
+            pR->state = RH;
+            *shorter = false;
+            break;
+        case RH:
+            if (pR->_pRight->state == LH){
+                switch (pR->_pRight->_pLeft->state){
+                    case LH:
+                        pR->_pRight->state = RH;
+                        pR->state = EH;
+                        break;
+                    case EH:
+                        pR->_pRight->state = EH;
+                        pR->state = EH;
+                        break;
+                    case RH:
+                        pR->_pRight->state = EH;
+                        pR->state = LH;
+                        break;
+                }
+                pR->_pRight->_pLeft->state = EH;
+                rotRight(pR->_pRight);
+                rotLeft(pR);
+            }
+            else{
+                switch (pR->_pRight->state){
+                    case LH:
+                    case RH:
+                        pR->_pRight->state = EH;
+                        pR->state = EH;
+                        break;
+                    case EH:
+                        pR->_pRight->state = LH;
+                        pR->state = RH;
+                        break;
+                }
+                rotLeft(pR);
+            }
+    }
+}
+
+template<class T>
+void dltLeftBal(AVLNode<T>* &pR, bool *shorter){
+    switch (pR->state){
+        case RH:
+            pR->state = EH;
+            break;
+        case EH:
+            pR->state = LH;
+            *shorter = false;
+            break;
+        case LH:
+            if (pR->_pLeft->state == RH){
+                switch (pR->_pLeft->_pRight->state){
+                    case RH:
+                        pR->_pLeft->state = LH;
+                        pR->state = EH;
+                        break;
+                    case EH:
+                        pR->_pLeft->state = EH;
+                        pR->state = EH;
+                        break;
+                    case LH:
+                        pR->_pLeft->state = EH;
+                        pR->state = RH;
+                        break;
+                }
+                pR->_pLeft->_pRight->state = EH;
+                rotLeft(pR->_pLeft);
+                rotRight(pR);
+            }
+            else{
+                switch (pR->_pLeft->state){
+                    case EH:
+                    case LH:
+                        pR->_pLeft->state = EH;
+                        pR->state = EH;
+                        break;
+                    case EH:
+                        pR->_pLeft->state = RH;
+                        pR->state = LH;
+                        break;
+                }
+                rotRight(pR);
+            }
+    }
+}
+
+template<class T>
+void traverseNLR(AVLNode<T> *pR, void (*op)(T&)){
+    if (pR){
+        //print data node hiện tại
+        traverseNLR(pR->_pLeft, op());
+        traverseNLR(pR->_pRight, op());
+    }
+}
+template<class T>
+void traverseLNR(AVLNode<T> *pR, void (*op)(T&)){
+    if (pR){
+        traverseLNR(pR->_pLeft, op());
+        //print data node hiện tại
+        traverseLNR(pR->_pRight, op());
+    }
+}
+template<class T>
+void traverseLRN(AVLNode<T> *pR, void (*op)(T&)){
+    if (pR){
+        traverseLRN(pR->_pLeft, op());
+        traverseLRN(pR->_pRight, op());
+        //print data node hiện tại
+    }
+}
 #endif //A02_DSALIB_H
