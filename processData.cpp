@@ -195,8 +195,141 @@ void getMin(VRecord &data, void *list){
 
 //----------------------------------------------------------------------------------------------------------
 
+	//bool CYR(, L1List<VRecord> &reclist)
 
 //----------------------------------------------------------------------------------------------------------
+//Function 
+bool checkerror(double p, double r, double d) {
+	if (p == r) return true;
+	if ((p >= r - d) && (p <= r + d)) return true;
+	return false;
+}
+
+
+
+template <class T>
+bool CYR(char *cmd, L1List<VRecord> &recList)
+{
+	if (!cmd) return false;
+	char *cmdID = strtok(cmd, "_");
+	char *cmdRy = strtok(NULL, "_");
+	char *cmddy = strtok(NULL, "_");
+	VRecord r(cmdID);
+	L1List<VRecord> l;
+	l.insertHead(r);
+	recList.traverse(getRoD, &l);
+	l.removeHead();
+	
+	L1List<VRecord> *l1 = l->_pHead;
+	while (l1->pNext != NULL) {
+		if ((checkerror(l1->y, cmdRy, cmddy) == true) && (l1->x == 0) ) {
+			cout << "Yes";
+			break;
+		}
+		l1 = l1->pNext;
+	}
+	cout << "No" << endl;
+	return true;
+}
+
+template <class T>
+bool CXR(char *cmd, L1List<VRecord> &recList)
+{
+	if (!cmd) return false;
+	char *cmdID = strtok(cmd, "_");
+	char *cmdRx = strtok(NULL, "_");
+	char *cmddx = strtok(NULL, "_");
+	VRecord r(cmdID);
+	L1List<VRecord> l;
+	l.insertHead(r);
+	recList.traverse(getRoD, &l);
+	l.removeHead();
+
+	L1List<VRecord> *l1 = l->_pHead;
+	while (l1->pNext != NULL) {
+		if ((checkerror(l1->x, cmdRx, cmddx) == true) && (l1->y == 0)) {
+			cout << "Succeed";
+			break;
+		}
+		l1 = l1->pNext;
+	}
+	cout << "No" << endl;
+	return true;
+}
+
+template <class T>
+bool NYR(char *cmd, L1List<VRecord> &recList) {
+	if (!cmd) return false;
+	char *cmdID = strtok(cmd, "_");
+	char *cmdRy = strtok(NULL, "_");
+	char *cmddy = strtok(NULL, "_");
+	VRecord r(cmdID);
+	L1List<VRecord> l;
+	l.insertHead(r);
+	recList.traverse(getRoD, &l);
+	l.removeHead();
+	int count = 0;
+	L1List<VRecord *l1 = l->_pHead;
+	while (l1->pNext != NULL) {
+		if ((checkerror(l1->y, cmdRy, cmddy) == true) && (l1->x == 0))  {
+			cout = count + 1;
+		}
+		l1 = l1->pNext;
+	}
+	cout << count << endl;
+	return true;
+}
+
+template <class T>
+bool NXR(char *cmd, L1List<VRecord> &recList) {
+	if (!cmd) return false;
+	char *cmdID = strtok(cmd, "_");
+	char *cmdRx = strtok(NULL, "_");
+	char *cmddx = strtok(NULL, "_");
+	VRecord r(cmdID);
+	L1List<VRecord> l;
+	l.insertHead(r);
+	recList.traverse(getRoD, &l);
+	l.removeHead();
+	int count = 0;
+	L1List<VRecord> *l1 = l->_pHead;
+	while (l1->pNext != NULL) {
+		if ((checkerror(l1->y, cmdRx, cmddx) == true) && (l1->y == 0))  {
+			count = count + 1;
+		}
+		l1 = l1->pNext;
+	}
+	cout << count << endl;
+	return true;
+}
+
+template <class T>
+bool NRR(char *cmd, L1List<VRecord> &recList) {
+	if (!cmd) return false;
+	char *cmdRy = strtok(cmd, "_");
+	char *cmdRx = strtok(cmd, "_");
+	char *cmddy = strtok(cmd, "_");
+	char *cmddx = strtok(cmd, "_");
+	int count = 0;
+	L1List<VRecord> *l1 = recList->_pHeah;
+	While (l1->pNext != NULL) {
+		if (checkerror(l1->x, cmdRx, cmddx) == true) {
+			if (checkerror(l1->y, cmdRy, cmddy) == true) {
+				count = count + 1;
+				l1 = l1->pNext;
+			}
+			else {
+				l1 = l1->pNext;
+			}
+		}
+		else {
+			l1 = l1->pNext;
+		}
+	}
+	cout << count << endl;
+	return true;
+}
+
 
 
 
